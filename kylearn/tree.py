@@ -52,8 +52,6 @@ class DecisionTreeClassifier(object):
 
 
 
-
-
 #functions
 
 def get_best_attribute(data):
@@ -128,18 +126,18 @@ def get_class_counts(data):
     >>> data = pd.DataFrame({'class': y})
     >>> get_class_counts(data)
     (3, 2)
+    >>> y = [1, 1, 1]
+    >>> data = pd.DataFrame({'class': y})
+    >>> get_class_counts(data)
+    (0, 3)
     """
-    _, counts = np.unique(data['class'], return_counts = True)
-
-    if (len(counts) == 1):
-        counts = np.append(counts, 0)
-
-    #TODO implement this without np.unique, it will fail on pure set
+    counts = np.bincount(data['class'])
 
     return (counts[0], counts[1])
 
 def is_pure(data):
     '''
+    returns True if data['class'] is a pure dataset
     >>> y = [0,0,0]
     >>> data = pd.DataFrame({'class': y})
     >>> is_pure(data)

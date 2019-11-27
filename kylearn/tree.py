@@ -1,5 +1,7 @@
 #!/Users/kylemoore/miniconda3/bin/python
 
+#TODO clean up this code a bit
+
 """This file contains tree classes"""
 
 #imports
@@ -29,7 +31,6 @@ class DecisionTreeNode(object):
     def __init__(self, data, attribute = None):
         self.neg_count, self.pos_count = get_class_counts(data)
         self.attribute = attribute
-        print(attribute)
         self.data = data
 
     def get_pred(self):
@@ -43,16 +44,20 @@ class DecisionTreeClassifier(object):
         self.tree = Tree()
 
     def split(self, node, data, attr):
-        attr_vals = get_values(data, attr)
+        '''algorithm to recursively split nodes by best attribute until decision tree is
+        constructed'''
+
+        attr_vals = get_values(data, attr) #gets all possible values for attribute in data
+
         for val in attr_vals:
-            new_data = data[data[attr] == val]
+            new_data = data[data[attr] == val] #splits data by attribute val 
             new_attr = get_best_attribute(new_data) # this is the next attribute to split on
             new_node = self.tree.create_node(val,
                                              len(self.tree.all_nodes()),
                                              node.identifier,
                                              data = DecisionTreeNode(data=new_data,
                                                                      attribute = new_attr))
-            if (not(is_pure(new_data))):
+            if (not(is_pure(new_data))): #recursively calls split if data isn't pure
                 self.split(new_node, new_data, new_attr)
 
     def fit(self, X, y):
@@ -64,12 +69,27 @@ class DecisionTreeClassifier(object):
 
     def predict(self, X):
         '''Predict class value for X'''
-        node_cur = self.tree['root']
+        preds = []
+        for row in X.itertuples(): #iterates through each row of X
 
-        while not(node_cur.is_leaf()):
-            node_cur = self.tree.children(node_cur.identifier)
-            print(node_cur)
+            node_cur = self.tree['root'] #initializes current node to root
 
+
+            while not(node_cur.is_leaf()):
+                attr = node_cur.data.attribute #attribute that the current node will be split on
+
+                val = getattr(row, attr) #value of attribute at current row
+
+                node_cur_children = node_cur.fpointer #returns list of children node ids
+
+                for node_id in node_cur_children: #iterates through all children of node_cur
+                    node = self.tree[node_id]
+                    if(node.tag  == val): #if node's tag matches val
+                        node_cur = node
+
+            preds.append(node_cur.data.get_pred())
+
+        return preds
 #functions
 
 def get_best_attribute(data):
@@ -178,5 +198,6 @@ if __name__ == "__main__":
     clas = DecisionTreeClassifier()
     clas.fit(X, y)
     clas.tree.show(idhidden = False)
-    clas.tree.show(idhidden = False, data_property = 'attribute')
-    clas.predict(X)
+    print(data)
+    y_pred = clas.predict(X)
+    print(y_pred)

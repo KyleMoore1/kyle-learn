@@ -29,28 +29,46 @@ class DecisionTreeNode(object):
     def __init__(self, data, attribute = None):
         self.neg_count, self.pos_count = get_class_counts(data)
         self.attribute = attribute
+        print(attribute)
         self.data = data
+
+    def get_pred(self):
+        if self.pos_count > self.neg_count:
+            return 1
+        else:
+            return 0
 
 class DecisionTreeClassifier(object):
     def  __init__(self):
         self.tree = Tree()
 
-    def split(self, node, data):
-        attr = get_best_attribute(data)
+    def split(self, node, data, attr):
         attr_vals = get_values(data, attr)
-
         for val in attr_vals:
             new_data = data[data[attr] == val]
+            new_attr = get_best_attribute(new_data) # this is the next attribute to split on
             new_node = self.tree.create_node(val,
                                              len(self.tree.all_nodes()),
                                              node.identifier,
-                                             data =
-                                             DecisionTreeNode(data = new_data, attribute = attr))
-            if not(is_pure(new_data)):
-                self.split(new_node, new_data)
+                                             data = DecisionTreeNode(data=new_data,
+                                                                     attribute = new_attr))
+            if (not(is_pure(new_data))):
+                self.split(new_node, new_data, new_attr)
 
+    def fit(self, X, y):
+        '''Build a decision tree classifier from the training set (X,y)'''
+        data = pd.concat([X, y], axis = 1)
+        attr = get_best_attribute(data)
+        node = clas.tree.create_node("Root", "root", data = DecisionTreeNode(data, attr))
+        clas.split(node, node.data.data, attr)
 
+    def predict(self, X):
+        '''Predict class value for X'''
+        node_cur = self.tree['root']
 
+        while not(node_cur.is_leaf()):
+            node_cur = self.tree.children(node_cur.identifier)
+            print(node_cur)
 
 #functions
 
@@ -131,9 +149,10 @@ def get_class_counts(data):
     >>> get_class_counts(data)
     (0, 3)
     """
-    counts = np.bincount(data['class'])
-
-    return (counts[0], counts[1])
+    y = data['class']
+    num_pos = np.count_nonzero(y == 1)
+    num_neg = np.count_nonzero(y == 0)
+    return (num_neg, num_pos)
 
 def is_pure(data):
     '''
@@ -154,7 +173,10 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
     data = pd.read_csv('./datasets/test.csv').drop('Unnamed: 0', axis = 1)
+    X = data.drop('class', axis = 1)
+    y = data['class']
     clas = DecisionTreeClassifier()
-    node = clas.tree.create_node("Root", "root", data = DecisionTreeNode(data))
-    clas.split(node, node.data.data)
-    clas.tree.show()
+    clas.fit(X, y)
+    clas.tree.show(idhidden = False)
+    clas.tree.show(idhidden = False, data_property = 'attribute')
+    clas.predict(X)
